@@ -1,0 +1,15 @@
+파일로 들어가서 터미널 창 열고
+
+docker --version
+Docker version 28.0.4, build b8034c0
+이런식으로 나오면 오케이
+
+docker run hello-world
+Hello from Docker! 
+이런식으로 나오면 오케이
+
+docker-compose up -d
+했을때 뭐 이상한거들 깔리면 오케이
+
+docker ps
+했을때 kafka zookeeper뜨면 오케이
