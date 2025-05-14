@@ -13,14 +13,27 @@ services:
     depends_on:
       - zookeeper
     ports:
+      # 호스트의 9092 포트를 컨테이너의 9092 포트로 연결 (외부 접속용)
       - "9092:9092"
+      # 호스트의 29092 포트를 컨테이너의 29092 포트로 연결 (내부 통신용, 다른 이름의 리스너)
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092  
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
-      KAFKA_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181' # 작은 따옴표 추가 (필수는 아님)
+
+      # --- Kafka 리스너 설정 (가장 중요!) ---
+      KAFKA_LISTENERS: LISTENER_INTERNAL://kafka:29092,LISTENER_EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_INTERNAL://kafka:29092,LISTENER_EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_INTERNAL:PLAINTEXT,LISTENER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_INTERNAL
+      # --- 여기까지 Kafka 리스너 설정 ---
+
+      # Replication factor 설정
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
   postgres:
     image: postgres:14
@@ -43,7 +56,10 @@ services:
     ports:
       - "5601:5601"
     environment:
-      - ELASTICSEARCH_HOSTS=http://localhost:9200  
+      # ELASTICSEARCH_HOSTS=http://localhost:9200 # 원래 설정
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200" # 변경 권장
+    depends_on: # Elasticsearch가 먼저 실행되도록 명시
+      - elasticsearch
 
   logstash:
     image: docker.elastic.co/logstash/logstash:7.17.9
